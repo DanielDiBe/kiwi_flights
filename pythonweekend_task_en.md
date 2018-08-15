@@ -85,4 +85,4 @@ Input data will be fed into your program through `stdio` so it should be possibl
 ## Submittions
 
 Please, send your submissions in form of `.py` or `.zip` packages or links to GitHub repository to:
-`xxx@xxx.com`
+`tech@engeto.com`
