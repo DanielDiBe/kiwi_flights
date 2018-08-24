@@ -4,7 +4,7 @@ By solving this task, you will prove to us and yourself, that you are familiar w
 ## Requirements
 
 - python-2 or 3 (but you  know the right choice here ;-) )
-- all are modules allowed
+- all modules are allowed
 
 
 ## Description
