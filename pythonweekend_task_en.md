@@ -9,7 +9,7 @@ By solving this task, you will prove to us and yourself, that you are familiar w
 
 ## Description
 
-You have data about flights (segments). Your task is to find combinations of flights passengers with _no bags_, _one bag_ or _two bags_ are able to travel, having 1 to 4 hours for each transfer between flights. The columns in table of input data are explained bellow:
+You have data about flights (segments). Your task is to find all combinations of flights for passengers with _no bags_, _one bag_ or _two bags_ are able to travel, having 1 to 4 hours for each transfer between flights. The columns in table of input data are explained bellow:
 * `source`, `destination` are the code of airport the flight is departing from and arriving to
 * `departure`, `arrival` are times of departure and arrival
 * `price` is the price of flight per person (without baggage)
