@@ -15,45 +15,32 @@ def hours_difference(date_string1, date_string2):
     diff = parse_date(date_string2) - parse_date(date_string1)
     return diff.days*24 + diff.seconds/3600
 
-class Flight:
-    def __init__(self, index,
-            source=None, 
-            destination=None,
-            departure=None,
-            arrival=None,
-            flight_number=None,
-            price=None,
-            bags_allowed=None,
-            bag_price=None):
-        self.id = index
-        self.source = source 
-        self.destination = destination
-        self.departure = departure
-        self.arrival = arrival
-        self.flight_number = flight_number
-        self.price = price
-        self.bags_allowed = bags_allowed
-        self.bag_price = bag_price
-        # For compatibility with Flight Itineraries
-        self.flights = [self]
-
-    def __str__(self):
-        return "{} ({}->{})".format(self.flight_number, self.source, self.destination)
-
-class FlightItinerary:
-    def __init__(self, itinerary1, itinerary2):
-        # Chain the flights in both itineraries
-        self.flights = itinerary1.flights + itinerary2.flights
-        self.source = itinerary1.source
-        self.destination = itinerary2.destination
-        self.departure = itinerary1.departure
-        self.arrival = itinerary2.arrival
-        # And calculate their values
-        self.price = itinerary1.price + itinerary2.price
-        self.bag_price = itinerary1.bag_price + itinerary2.bag_price
-        self.bags_allowed = itinerary1.bags_allowed and itinerary2.bags_allowed
-
+class FlightBase:
     @staticmethod
+    def get_CSV_headers():
+        # This is a list of the intended headers for the output and
+        # its order
+        return "source,destination,departure,arrival,transfers_count,flight_numbers_chain,bags_allowed,price,price_with_1_bag,price_with_2_bags"
+
+    def to_CSV_entry(self):
+        # Because the output of the command is not very well defined
+        # besides it should be able to be procesed later, let's just
+        # transfer all the info for the combination in a way it is
+        # easy to capture by a postprocessing pipe
+        flight_code = lambda fl: fl.flight_number
+        return csv_separation_character.join((
+            self.source,
+            self.destination,
+            self.departure,
+            self.arrival,
+            str(len(self.flights)-1),  # Number of transfers involved
+            "->".join(map(flight_code, self.flights)),  # Chain of flights
+            str(self.bags_allowed),
+            str(self.price),  # Price for no bags
+            str(self.price+self.bag_price) if self.bags_allowed>=1 else "-",  # Price for one bag
+            str(self.price+self.bag_price*2) if self.bags_allowed>=2 else "-",  # Price for two bags
+        ))
+
     def can_chain(itinerary1, itinerary2):
         # In order for two itineraries to be chainable the destination of
         # the first must match the source of the second, and none of their
@@ -75,6 +62,43 @@ class FlightItinerary:
         # between 1 hour and 4
         diff = hours_difference(itinerary1.arrival, itinerary2.departure)
         return diff>=1 and diff<=4
+
+class Flight(FlightBase):
+    def __init__(self,
+            source=None, 
+            destination=None,
+            departure=None,
+            arrival=None,
+            flight_number=None,
+            price=None,
+            bags_allowed=None,
+            bag_price=None):
+        self.source = source 
+        self.destination = destination
+        self.departure = departure
+        self.arrival = arrival
+        self.flight_number = flight_number
+        self.price = int(price)
+        self.bags_allowed = int(bags_allowed)
+        self.bag_price = int(bag_price)
+        # For compatibility with Flight Itineraries
+        self.flights = [self]
+
+    def __str__(self):
+        return "{} ({}->{})".format(self.flight_number, self.source, self.destination)
+
+class FlightItinerary(FlightBase):
+    def __init__(self, itinerary1, itinerary2):
+        # Chain the flights in both itineraries
+        self.flights = itinerary1.flights + itinerary2.flights
+        self.source = itinerary1.source
+        self.destination = itinerary2.destination
+        self.departure = itinerary1.departure
+        self.arrival = itinerary2.arrival
+        # And calculate their values
+        self.price = itinerary1.price + itinerary2.price
+        self.bag_price = itinerary1.bag_price + itinerary2.bag_price
+        self.bags_allowed = min(itinerary1.bags_allowed, itinerary2.bags_allowed)
 
     def __str__(self):
         return "Itinerary ({}->{})".format("->".join((f.source for f in self.flights)), self.destination)
@@ -104,13 +128,11 @@ def main(f_input, f_output, f_error, has_header=True):
 
     # Load each line as a flight
     flights = []
-    index = 0
     for l in f_input:
-        index += 1
         flights.append(
-            Flight(index, **dict(zip(headers, split_line(l))))
+            Flight(**dict(zip(headers, split_line(l))))
         )
-    
+
     # Flights database is populated, let's begin our calculus
     
     def match_itineraries(start_itineraries, end_itineraries):
@@ -119,7 +141,7 @@ def main(f_input, f_output, f_error, has_header=True):
             for j in end_itineraries:
                 if i == j:
                     continue
-                if FlightItinerary.can_chain(i, j):
+                if i.can_chain(j):
                     new_itineraries.append(FlightItinerary(i, j))
         return new_itineraries
 
@@ -138,8 +160,14 @@ def main(f_input, f_output, f_error, has_header=True):
 
     #check_equivalent_itineraries(itineraries)
 
-    #print("Itineraries:", ", ".join(map(str, itineraries)))
-    print("Done")
+    # And pass the result for further processing
+    f_output.write(FlightBase.get_CSV_headers()+"\n")
+    for it in itineraries:
+        f_output.write(it.to_CSV_entry()+"\n")
+
+    # And we are done, depending on the program purpose we would
+    # close the stream, let the system close it on program exit,
+    # or just stay alive for more input-output (with some modifications)
 
 # This is a test to check during development whether there are repeated
 # combinations in the output
