@@ -1,10 +1,10 @@
 # Daniel Diaz Benito <daniel.diaz.benito@gmail.com>
-# 31-VIII-2018
+# 31-VIII-2018 and 2-IX-2018
 # A small exercise in preparation for the Kiwi meeting.
 # No License is offered for this piece of code.
 
 import sys  # To capture stdin, stdout and stderr
-import datetime
+import datetime  # To parse transfer time
 
 csv_separation_character = ","
 
@@ -108,7 +108,7 @@ def split_line(row):
 
 def main(f_input, f_output, f_error, has_header=True):
     if f_input.isatty():
-        f_error.write("Cannot input data to 'find_combinations' in interactive mode")
+        f_error.write("Cannot input data to 'find_combinations' in interactive mode\n")
         exit(1)
 
     headers = ['source', 'destination', 'departure', 'arrival', 'flight_number', 'price', 'bags_allowed', 'bag_price']
@@ -120,10 +120,10 @@ def main(f_input, f_output, f_error, has_header=True):
         # fields exist and only once
         headers_set = set(headers)
         if len(accepted_headers & headers_set) != 8:
-            f_error.write("Required input headers missing: {}".format(", ".join(accepted_headers - headers_set)))
+            f_error.write("Required input headers missing: {}\n".format(", ".join(accepted_headers - headers_set)))
             exit(2)
         if len(headers_set - accepted_headers) > 0:
-            f_error.write("Unknown headers are present: {}".format(", ".join(headers_set - accepted_headers)))
+            f_error.write("Unknown headers are present: {}\n".format(", ".join(headers_set - accepted_headers)))
             exit(2)
 
     # Load each line as a flight
@@ -187,4 +187,8 @@ def check_equivalent_itineraries(itineraries):
     print(names)
 
 if __name__ == "__main__":
-    main(sys.stdin, sys.stdout, sys.stderr)
+    try:
+        main(sys.stdin, sys.stdout, sys.stderr)
+    except Exception as err:
+        sys.stderr.write(str(err)+"\n")
+        exit(3)
