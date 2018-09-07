@@ -5,6 +5,7 @@
 
 import sys  # To capture stdin, stdout and stderr
 import datetime  # To parse transfer time
+import csv
 
 csv_separation_character = ","
 
@@ -111,27 +112,8 @@ def main(f_input, f_output, f_error, has_header=True):
         f_error.write("Cannot input data to 'find_combinations' in interactive mode\n")
         exit(1)
 
-    headers = ['source', 'destination', 'departure', 'arrival', 'flight_number', 'price', 'bags_allowed', 'bag_price']
-    # Check the input header
-    if has_header:
-        accepted_headers = set(headers)
-        headers = list(split_line(f_input.readline()))
-        # Use sets in order to accept any order but ensure all the required 
-        # fields exist and only once
-        headers_set = set(headers)
-        if len(accepted_headers & headers_set) != 8:
-            f_error.write("Required input headers missing: {}\n".format(", ".join(accepted_headers - headers_set)))
-            exit(2)
-        if len(headers_set - accepted_headers) > 0:
-            f_error.write("Unknown headers are present: {}\n".format(", ".join(headers_set - accepted_headers)))
-            exit(2)
-
     # Load each line as a flight
-    flights = []
-    for l in f_input:
-        flights.append(
-            Flight(**dict(zip(headers, split_line(l))))
-        )
+    flights = list(Flight(**l) for l in csv.DictReader(f_input))
 
     # Flights database is populated, let's begin our calculus
     
