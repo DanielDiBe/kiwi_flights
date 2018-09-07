@@ -43,6 +43,11 @@ class FlightBase:
         ))
 
     def can_chain(itinerary1, itinerary2):
+        # Additionally the transfer between both itineraries should be
+        # between 1 hour and 4
+        diff = hours_difference(itinerary1.arrival, itinerary2.departure)
+        if(diff<1 or diff>4):
+            return False
         # In order for two itineraries to be chainable the destination of
         # the first must match the source of the second, and none of their
         # source airports should repeat. The destination of the second
@@ -59,10 +64,7 @@ class FlightBase:
         for airport1 in (f.source for f in itinerary1.flights[1:]):
             if airport1 == airport2:
                 return False
-        # Additionally the transfer between both itineraries should be
-        # between 1 hour and 4
-        diff = hours_difference(itinerary1.arrival, itinerary2.departure)
-        return diff>=1 and diff<=4
+        return True
 
 class Flight(FlightBase):
     def __init__(self,
